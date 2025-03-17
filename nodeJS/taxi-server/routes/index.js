@@ -78,7 +78,7 @@ router.post('/taxi/register', function (req, res) {
     });
 });
 
-// 택시 리스트
+// 배차 리스트
 router.post('/taxi/list', function (req, res) {
     console.log('list / req.body = ' + JSON.stringify(req.body));
     let userId = req.body.userId; // 1. userId 가져오기
@@ -186,6 +186,28 @@ router.post('/driver/login', function (req, res) {
         } else {
             console.log('driver-login / err : ' + err);
             res.json([{ code: 1, message: err }]);
+        }
+    });
+});
+
+// 배차 리스트
+router.post('/driver/list', function (req, res) {
+    console.log('driver-list / req.body = ' + JSON.stringify(req.body));
+
+    let userId = req.body.userId;
+
+    console.log('driver-list / userId = ' + userId);
+
+    let queryStr = `SELECT * FROM tb_call WHERE driver_id="${userId}" OR call_state="REQ" ORDER BY id DESC`;
+
+    console.log('driver-list / queryStr = ' + queryStr);
+    db.query(queryStr, function (err, rows, fieldds) {
+        if (!err) {
+            console.log('driver-list / rows = ' + JSON.stringify(rows));
+            res.json([{ code: 0, message: '택시 호출 목록 호출 성공', data: rows }]);
+        } else {
+            console.log('driver-list / err : ' + err);
+            res.json([{ code: 1, message: '알 수 없는 오류가 발생하였습니다.', data: err }]);
         }
     });
 });
