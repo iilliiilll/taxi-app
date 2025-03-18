@@ -10,6 +10,18 @@ router.get('/', function (req, res, next) {
     res.render('index', { title: 'Express' });
 });
 
+// fcm 토큰 처리
+const updateFcm = (fcmToken, table, idColName, id) => {
+    const queryStr = `UPDATE ${table} SET fcm_token="${fcmToken}" WHERE ${idColName}="${id}"`;
+    console.log('>> updateFcm / queryStr = ' + queryStr);
+
+    db.query(queryStr, function (err, rows, fields) {
+        if (err) {
+            console.log('updateFcm / err : ' + JSON.stringify(err));
+        }
+    });
+};
+
 // 테스트
 router.get('/taxi/test', function (req, res, next) {
     db.query('select * from tb_user', (err, rows, fields) => {
@@ -29,6 +41,7 @@ router.post('/taxi/login', function (req, res, next) {
 
     let userId = req.body.userId;
     let userPw = req.body.userPw;
+    let fcmToken = req.body.fcmToken || '';
 
     let queryStr = `select * from tb_user where user_id = "${userId}" and user_pw = "${userPw}"`;
     console.log('login / queryStr = ' + queryStr);
@@ -40,6 +53,10 @@ router.post('/taxi/login', function (req, res, next) {
             console.log('login / len = ' + len);
             let code = len == 0 ? 1 : 0;
             let message = len == 0 ? '아이디 또는 비밀번호가 잘못 입력되었습니다.' : '로그인 성공';
+
+            if (code == 0) {
+                updateFcm(fcmToken, 'tb_user', 'user_id', userId);
+            }
 
             res.json([{ code: code, message: message }]);
         } else {
@@ -55,6 +72,7 @@ router.post('/taxi/register', function (req, res) {
 
     let userId = req.body.userId;
     let userPw = req.body.userPw;
+    let fcmToken = req.body.fcmToken || '';
 
     console.log('register / userId = ' + userId + ', userPw = ' + userPw);
 
@@ -63,7 +81,7 @@ router.post('/taxi/register', function (req, res) {
         return;
     }
 
-    let queryStr = `insert into tb_user values ("${userId}", "${userPw}", "")`;
+    let queryStr = `insert into tb_user values ("${userId}", "${userPw}", "${fcmToken}")`;
     console.log('register / queryStr = ' + queryStr);
     db.query(queryStr, function (err, rows, fields) {
         if (!err) {
@@ -141,6 +159,7 @@ router.post('/driver/register', function (req, res) {
 
     let userId = req.body.userId;
     let userPw = req.body.userPw;
+    let fcmToken = req.body.fcmToken || '';
 
     console.log('driver-register / userId = ' + userId + ', userPw = ' + userPw);
 
@@ -149,7 +168,7 @@ router.post('/driver/register', function (req, res) {
         return;
     }
 
-    let queryStr = `INSERT INTO tb_driver VALUES("${userId}", "${userPw}", "")`;
+    let queryStr = `INSERT INTO tb_driver VALUES("${userId}", "${userPw}", "${fcmToken}")`;
     console.log('driver-register / queryStr = ' + queryStr);
 
     db.query(queryStr, function (err, rows, ffields) {
@@ -173,6 +192,7 @@ router.post('/driver/login', function (req, res) {
 
     let userId = req.body.userId;
     let userPw = req.body.userPw;
+    let fcmToken = req.body.fcmToken || '';
 
     let queryStr = `SELECT * FROM tb_driver WHERE driver_id="${userId}" AND driver_pw="${userPw}"`;
     console.log('driver-login / queryStr = ' + queryStr);
@@ -183,6 +203,10 @@ router.post('/driver/login', function (req, res) {
             console.log('driver-login / len = ' + len);
             let code = len == 0 ? 1 : 0;
             let message = len == 0 ? '아이디 또는 비밀번호가 잘못 입력되었습니다.' : '로그인 성공';
+
+            if (code == 0) {
+                updateFcm(fcmToken, 'tb_driver', 'driver_id', userId);
+            }
 
             res.json([{ code: code, message: message }]);
         } else {
