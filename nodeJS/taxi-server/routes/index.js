@@ -2,7 +2,6 @@ var express = require('express');
 var router = express.Router();
 
 const db = require('../database/db_connect');
-const { use } = require('.');
 const admin = require('firebase-admin');
 
 /* GET home page. */
@@ -18,6 +17,43 @@ const updateFcm = (fcmToken, table, idColName, id) => {
     db.query(queryStr, function (err, rows, fields) {
         if (err) {
             console.log('updateFcm / err : ' + JSON.stringify(err));
+        }
+    });
+};
+
+// 기사에게 알람
+const sendPushToAlldriver = () => {
+    let queryStr = `SELECT fcm_token from tb_driver`;
+
+    console.log('>> queryStr = ' + queryStr);
+
+    db.query(queryStr, function (err, rows, fields) {
+        if (!err) {
+            for (row of rows) {
+                console.log('allDriver - fcm_token = ' + row.fcm_token);
+                if (row.fcm_token) {
+                    sendFcm(row.fcm_token, '배차 요청이 있습니다.');
+                }
+            }
+        }
+    });
+};
+
+// 손님에게 알람
+const sendPushToUser = (userId) => {
+    let queryStr = `SELECT fcm_token FROM tb_user WHERE user_id="${userId}"`;
+    console.log('>> push user - queryStr = ' + queryStr);
+
+    db.query(queryStr, function (err, rows, fields) {
+        if (!err) {
+            console.log('>> push user - rows = ' + JSON.stringify(rows));
+            if (Object.keys(rows).length > 0 && rows[0].fcm_token) {
+                sendFcm(rows[0].fcm_token, '배차가 완료되었습니다.');
+            } else {
+                console.log('Push 전송 실패');
+            }
+        } else {
+            console.log('> push user - err : ' + err);
         }
     });
 };
@@ -138,12 +174,19 @@ router.post('/taxi/call', function (req, res) {
         return;
     }
 
-    let queryStr = `insert into tb_call values(NULL, "${userId}", "${startLat}", "${startLng}", "${startAddr}", "${endLat}", "${endLng}", "${endAddr}", "REQ", "")`;
+    let queryStr = `insert into tb_call values(NULL, "${userId}", 
+    "${startLat}", "${startLng}", "${startAddr}", 
+    "${endLat}", "${endLng}", "${endAddr}",
+     "REQ", "", CURRENT_TIMESTAMP)`;
+
     console.log('call / queryStr = ' + queryStr);
 
     db.query(queryStr, function (err, rows, fields) {
         if (!err) {
             console.log('call / rows = ' + JSON.stringify(rows));
+
+            sendPushToAlldriver();
+
             res.json([{ code: 0, message: '택시 호출이 완료되었습니다.' }]);
         } else {
             console.log('call / err : ' + JSON.stringify(err));
@@ -244,6 +287,7 @@ router.post('/driver/accept', function (req, res) {
 
     let callId = req.body.callId;
     let driverId = req.body.driverId;
+    let userId = req.body.userId;
 
     console.log('driver-accept / callId = ' + callId + ', driverId = ' + driverId);
 
@@ -258,6 +302,7 @@ router.post('/driver/accept', function (req, res) {
         if (!err) {
             console.log('driver-accept / rows = ' + JSON.stringify(rows));
             if (rows.affectedRows > 0) {
+                sendPushToUser(userId);
                 res.json([{ code: 0, message: '배차가 완료되었습니다.' }]);
             } else {
                 res.json([{ code: 2, message: '이미 완료되었거나 존재하지 않는 콜입니다.' }]);
