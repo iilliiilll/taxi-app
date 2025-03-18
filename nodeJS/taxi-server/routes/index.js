@@ -245,4 +245,31 @@ router.post('/driver/accept', function (req, res) {
     });
 });
 
+// 푸시 테스트
+router.post('/push/text', function (req, res, next) {
+    console.log('push-test / req.body = ' + JSON.stringify(req.body));
+
+    let fcmToken = req.body.fcmToken;
+    let message = req.body.message;
+
+    sendFcm(fcmToken, message);
+
+    res.json([{ code: 0, message: '푸시 테스트' }]);
+});
+
+// 알림 보내기
+const sendFcm = (fcmToken, msg) => {
+    const message = { notification: { title: '알림', body: msg }, token: fcmToken };
+
+    admin
+        .messaging()
+        .send(message)
+        .then((response) => {
+            console.log('-- push 성공');
+        })
+        .catch((error) => {
+            console.log('-- push error / ' + JSON.stringify(error));
+        });
+};
+
 module.exports = router;
