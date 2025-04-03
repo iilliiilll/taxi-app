@@ -8,7 +8,7 @@ import FirebaseCore
 @main
 class AppDelegate: RCTAppDelegate {
   override func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
-    GMSServices.provideAPIKey("AIzaSyApbMABjWcvDTAX7CmtmiaaB54EzWqOC4I")
+    GMSServices.provideAPIKey("")
 
     if FirebaseApp.app() == nil {
       FirebaseApp.configure()
