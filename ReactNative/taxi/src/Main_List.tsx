@@ -7,6 +7,7 @@ import {
   RefreshControl,
   Modal,
   Alert,
+  TouchableOpacity,
 } from 'react-native';
 import {
   widthPercentageToDP as wp,
@@ -24,6 +25,17 @@ function Main_List() {
 
   const [callList, setCallList] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  // 택시 취소 ==================================================
+  const cancelTaxi = () => {
+    Alert.alert('취소', '배차를 취소하였습니다.', [
+      {
+        text: '확인',
+        onPress: () => console.log('Cancel Pressed'),
+        style: 'cancel',
+      },
+    ]);
+  };
 
   useFocusEffect(
     React.useCallback(() => {
@@ -70,12 +82,13 @@ function Main_List() {
     console.log('row = ' + JSON.stringify(row));
 
     return (
-      <View style={{flexDirection: 'row', marginBottom: 5, width: wp(100)}}>
+      <View style={{flexDirection: 'row', marginBottom: 30, width: wp(100)}}>
         <View style={{width: wp(80)}}>
           <Text style={styles.textForm}>{row.item.start_addr}</Text>
           <Text style={[styles.textForm, {borderTopWidth: 0}]}>
             {row.item.end_addr}
           </Text>
+          <Text style={styles.textForm}>{row.item.formatted_time}</Text>
         </View>
         <View
           style={{
@@ -84,6 +97,13 @@ function Main_List() {
             justifyContent: 'center',
           }}>
           <Text>{row.item.call_state}</Text>
+          {/* 취소 버튼 ============================================ */}
+          {row.item.call_state === 'REQ' && (
+            <TouchableOpacity style={styles.button} onPress={cancelTaxi}>
+              <Text style={styles.button}>취소</Text>
+            </TouchableOpacity>
+          )}
+          {/* 취소 버튼 ============================================ */}
         </View>
       </View>
     );
@@ -112,6 +132,7 @@ function Main_List() {
   );
 }
 
+// styles =============================================================
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -140,6 +161,17 @@ const styles = StyleSheet.create({
     height: hp(5),
     paddingLeft: 10,
     paddingRight: 10,
+  },
+  button: {
+    backgroundColor: '#f44',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+    textAlign: 'center',
   },
 });
 

@@ -147,6 +147,27 @@ router.post('/taxi/list', function (req, res) {
         if (!err) {
             // 3-1. 에러가 없다면
             console.log('list / rows = ' + JSON.stringify(rows));
+
+            rows = rows.map((row) => {
+                const requestTime = new Date(row.request_time);
+                const today = new Date();
+                const isToday = requestTime.toDateString() === today.toDateString();
+
+                const formattedDate = requestTime.toISOString().split('T')[0]; // YYYY-MM-DD
+                const formattedTime = requestTime.toTimeString().split(' ')[0].slice(0, 5); // HH:mm
+
+                row.formatted_time = isToday ? formattedTime : formattedDate;
+
+                console.log('=================== requestTime: ', requestTime);
+                console.log('=================== today : ', today);
+                console.log('=================== formattedDate : ', formattedDate);
+                console.log('=================== formattedTime : ', formattedTime);
+                console.log('=================== isToday: ', isToday);
+                console.log('=================== formatted time: ', row.formatted_time);
+
+                return row;
+            });
+
             res.json([{ code: 0, message: '택시 호출 목록 호출 성공', data: rows }]);
         } else {
             // 3-2. 에러가 있다면
@@ -191,6 +212,44 @@ router.post('/taxi/call', function (req, res) {
         } else {
             console.log('call / err : ' + JSON.stringify(err));
             res.json([{ code: 2, message: '택시 호출이 실패했습니다.', data: err }]);
+        }
+    });
+});
+
+// 택시 콜 취소
+router.post('/taxi/cancel', function (req, res) {
+    console.log('cancel / req.body' + JSON.stringify(req.body));
+
+    let userId = req.body.userId;
+    let startLat = req.body.startLat;
+    let startLng = req.body.startLng;
+    let endLat = req.body.endLat;
+    let endLng = req.body.endLng;
+
+    if (!(userId && startLat && startLng && endLat && endLng)) {
+        // 하나라도 빠졌다면
+        res.json([{ code: 1, message: '출발지 또는 도착지 정보가 없습니다.' }]);
+        return;
+    }
+
+    let queryStr = `DELETE FROM tb_call WHERE (
+    user_id = '${userId}' AND
+    start_lat = ${startLat} AND 
+    start_lng = ${startLng} AND 
+    end_lat = ${endLat} AND 
+    end_lng = ${endLng} 
+    )`;
+
+    console.log('cancel / queryStr = ' + queryStr);
+
+    db.query(queryStr, function (err, rows, fields) {
+        if (!err) {
+            console.log('cancel / rows = ' + JSON.stringify(rows));
+
+            res.json([{ code: 0, message: '택시 호출을 취소하였습니다.' }]);
+        } else {
+            console.log('cancel / err : ' + JSON.stringify(err));
+            res.json([{ code: 2, message: '택시 호출을 취소하지 못했습니다.', data: err }]);
         }
     });
 });
